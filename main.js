@@ -356,3 +356,25 @@ function T(s){return RT_EN&&RT_T[s]!==undefined?RT_T[s]:s;}
     }
   }catch(e){}
 })();
+
+/* Contact form -> FormSubmit (trade@render.mn) */
+(function(){
+  var f=document.getElementById('ctForm'); if(!f) return;
+  var st=document.getElementById('ctStatus'), btn=f.querySelector('.ct-submit');
+  var M=RT_EN?{ok:'Thank you. Your enquiry has been sent — we will get back to you shortly.',err:'Sorry, the message could not be sent. Please call +976 7711 6433 or try again.',wait:'Sending…'}
+             :{ok:'Баярлалаа. Таны хүсэлт илгээгдлээ, бид удахгүй холбогдох болно.',err:'Уучлаарай, илгээж чадсангүй. +976 7711 6433 дугаарт залгах эсвэл дахин оролдоно уу.',wait:'Илгээж байна…'};
+  var show=function(t,ok){st.textContent=t;st.hidden=false;st.className='ct-status '+(ok?'ok':'err');};
+  if(/[?&]sent=1/.test(location.search)) show(M.ok,true);
+  f.addEventListener('submit',function(e){
+    if(!window.fetch||!window.FormData) return;
+    e.preventDefault();
+    if(f._honey&&f._honey.value) return;
+    var label=btn.textContent; btn.disabled=true; btn.textContent=M.wait;
+    var data={}; new FormData(f).forEach(function(v,k){ if(k!=='_next'&&k!=='_honey') data[k]=v; });
+    fetch(f.getAttribute('data-ajax'),{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(data)})
+      .then(function(r){return r.json().catch(function(){return {};}).then(function(j){ if(!r.ok||String(j.success)==='false') throw 0; });})
+      .then(function(){ f.reset(); var c=document.getElementById('zcCount'); if(c) c.textContent='0'; show(M.ok,true); })
+      .catch(function(){ show(M.err,false); })
+      .then(function(){ btn.disabled=false; btn.textContent=label; });
+  });
+})();
