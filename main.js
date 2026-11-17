@@ -378,3 +378,43 @@ function T(s){return RT_EN&&RT_T[s]!==undefined?RT_T[s]:s;}
       .then(function(){ btn.disabled=false; btn.textContent=label; });
   });
 })();
+
+/* Projects filter: custom white drop-down panels (native select kept for state) */
+(function(){
+  var labels=document.querySelectorAll('.pyp .pyf-sel'); if(!labels.length) return;
+  var all=[];
+  var closeAll=function(except){all.forEach(function(o){if(o!==except&&o.l.classList.contains('open')){o.l.classList.remove('open');o.b.setAttribute('aria-expanded','false');}});};
+  var sync=function(){all.forEach(function(o){var op=o.s.options[o.s.selectedIndex];o.b.textContent=op?op.text:'';});};
+  labels.forEach(function(l){
+    var s=l.querySelector('select'); if(!s) return;
+    var b=document.createElement('button'); b.type='button'; b.className='pyf-btn'; b.setAttribute('aria-haspopup','listbox'); b.setAttribute('aria-expanded','false'); b.setAttribute('aria-label',s.getAttribute('aria-label')||'');
+    var p=document.createElement('ul'); p.className='pyf-pop'; p.setAttribute('role','listbox');
+    s.classList.add('pyf-native'); s.tabIndex=-1; s.setAttribute('aria-hidden','true');
+    l.insertBefore(b,s); l.appendChild(p);
+    var o={l:l,s:s,b:b,p:p}; all.push(o);
+    var build=function(){
+      p.innerHTML='';
+      Array.prototype.forEach.call(s.options,function(op){
+        if(op.hidden||op.disabled) return;
+        var li=document.createElement('li'); li.setAttribute('role','option'); li.tabIndex=-1; li.textContent=op.text; li.dataset.v=op.value;
+        if(op.value===s.value){li.className='is-sel';li.setAttribute('aria-selected','true');}
+        p.appendChild(li);
+      });
+    };
+    var pick=function(v){ if(s.value!==v){s.value=v; s.dispatchEvent(new Event('change',{bubbles:true}));} sync(); closeAll(); b.focus(); };
+    b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation(); var open=!l.classList.contains('open'); closeAll(o); if(open){build(); l.classList.add('open'); b.setAttribute('aria-expanded','true'); var c=p.querySelector('.is-sel')||p.firstChild; if(c) c.focus({preventScroll:true});} else {l.classList.remove('open'); b.setAttribute('aria-expanded','false');}});
+    p.addEventListener('click',function(e){e.preventDefault();e.stopPropagation(); var li=e.target.closest('li'); if(li) pick(li.dataset.v);});
+    p.addEventListener('keydown',function(e){
+      var li=document.activeElement; if(!li||li.parentNode!==p) return;
+      if(e.key==='ArrowDown'){e.preventDefault(); (li.nextSibling||li).focus();}
+      else if(e.key==='ArrowUp'){e.preventDefault(); (li.previousSibling||li).focus();}
+      else if(e.key==='Enter'||e.key===' '){e.preventDefault(); pick(li.dataset.v);}
+    });
+    l.addEventListener('click',function(e){ if(e.target===l){ e.preventDefault(); e.stopPropagation(); b.click(); } });
+  });
+  document.addEventListener('click',function(){closeAll();});
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ var o=all.filter(function(x){return x.l.classList.contains('open');})[0]; closeAll(); if(o) o.b.focus(); }});
+  var r=document.getElementById('pjReset'); if(r) r.addEventListener('click',function(){setTimeout(sync,0);});
+  all.forEach(function(o){o.s.addEventListener('change',sync);});
+  sync();
+})();
